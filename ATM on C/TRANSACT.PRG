@@ -1,0 +1,246 @@
+CLEAR
+CLOSE DATABASES
+SET TALK OFF
+
+actype=space(2)
+accnum=space(3)
+y=space(4)
+m=space(2)
+d=space(2)
+oy=space(2)
+om=space(2)
+read
+use accts.dbf
+pera= balance
+
+
+
+@1,1 say"*** ATM TRANSACTION ***"
+@2,1 say" Enter your account number:"
+@3,1 get actype PICTURE "@9"
+@3,3 say "-"
+@3,4 get accnum PICTURE "@9"
+@3,7 say "-"
+@3,8 get y PICTURE "@9"
+@3,12 get m PICTURE "@9"
+@3,14 get d PICTURE "@9"
+@3,16 say "-"
+@3,17 get om PICTURE "@9"
+@3,19 get oy PICTURE "@9"
+
+READ
+use medium.dbf
+
+tnum= trans_num+1
+append blank
+	replace trans_num with tnum
+	replace checker with actype
+	replace acc_num with accnum
+	replace date with date()
+	replace time with time()
+	replace balance with pera		
+
+@10,1 say "Enter 4-DIGIT PIN: "
+			count= 19
+			tkey=0
+			tpass=' '
+			wat= ' '
+			DO WHILE tkey <>13
+				tkey=0
+				wat= chr(tkey)
+				DO WHILE !isdigit(wat)
+					tkey=inkey()
+					wat=chr(tkey)
+				ENDDO
+				IF(tkey!=127)
+				tpass=tpass+chr(tkey)
+				@10,count say '*'
+				count = count+1
+				ELSE
+				count = count-1
+				@3,count say ' '
+				ENDIF
+				IF(pw!=tpass)
+					clear 
+					do transact.prg
+				ENDIF
+				IF(count==23)
+					exit
+				ENDIF
+			ENDDO
+
+READ
+
+vaccnum=VAL(accnum)
+vy=VAL(y)
+vm=VAL(m)
+vd=VAL(d)
+vom=VAL(om)
+voy=VAL(oy)
+	IF(actype=="02")
+		USE accts.dbf
+		checker="02"
+		tcount=0
+		vidnum=0
+		LOCATE FOR acc_num=vaccnum
+		DO WHILE FOUND()
+			tcount=tcount+1
+			ty=YEAR(birthdate)
+			tm=MONTH(birthdate)
+			td=DAY(birthdate)
+			toy= (YEAR(opendate) %1000)
+			tom= MONTH(opendate)
+			pw=pin
+			pera=balance
+			bday=birthdate
+			tday=opendate
+			num=dep_id
+			CONTINUE
+		ENDDO
+ENDIF
+
+IF(actype=="03")
+		use accts.dbf
+		checker="03"
+		tcount=0
+		vidnum=0
+		LOCATE FOR acc_num=vaccnum
+		DO WHILE FOUND()
+			tcount= tcount+1
+			ty=YEAR(birthdate)
+			tm=MONTH(birthdate)
+			td=DAY(birthdate)
+			toy= (YEAR(opendate) %1000)
+			tom= MONTH(opendate)
+			pw=pin
+			pera = balance
+			bday=birthdate
+			tday=opendate
+			num = dep_id
+			CONTINUE
+		ENDDO
+ENDIF
+
+f=0
+IF(tcount==1)
+IF(actype=checker)
+	f=f+1
+ENDIF
+IF pw==tpass
+	f=f+1
+ENDIF
+IF ty==vy
+	f=f+1
+ENDIF
+IF	tm=vm
+		f=f+1
+ENDIF
+IF td=vd
+	f=f+1
+ENDIF
+IF toy=voy
+	f=f+1
+ENDIF
+IF tom=vom
+	f=f+1
+ENDIF
+ENDIF
+
+IF(f==7)
+		clear
+		@1,15 say "***A T M ***"
+		@5,2 GET mchoice FUNCTION '*RNV WITHDRAW;DEPOSIT;INQUIRY';
+		SIZE 1, 10, 1 DEFAULT ''
+		@5,15 GET okcancel FUNCTION '*V \!OK;\?EXIT'
+		SIZE 1, 10, 1
+		READ CYCLE
+IF okcancel = 2
+		WAIT WINDOW 'PROGRAM CLOSED' NOWAIT
+					
+ENDIF
+		DO CASE
+			CASE mchoice = 'WITHDRAW'
+				@1,5 say "***WITHDRAW***
+				@5,5 say "Amount:"
+				money= space(8)
+				@5,15 get money PICTURE "@9"
+				read
+				bals=VAL(money)
+				DO WHILE(bals > pera)
+				WAIT WINDOW 'INSUFFICIENT MONEY' NOWAIT
+				@5,15 get money PICTURE "@9"
+				READ
+				bals = VAL(money)
+				IF (bals > pera)
+					WAIT WINDOW 'INSUFFICIENT MONEY'
+				ENDIF
+				money = space(6)
+				ENDDO
+				remainbal = pera - bals
+				@7,5 say "YOUR BALANCE: "
+				@7,19 say remainbal
+				
+				tid=0
+				use t_logs.dbf
+				go bottom
+				tid = transno
+				append blank
+				tid = tid +1
+				replace depo_id with num
+				replace acctype with checker
+				replace date with date()
+				replace time with time()
+				replace balance with remainbal
+				replace transtype with "WIT"
+				replace transamnt with bals
+				replace transno with tid
+				
+			CASE mchoice = 'DEPOSIT'
+			 	@1,1 say "**DEPOSIT**"
+			 	@5,5 say "Amount: "
+			 	money = space(8)
+			 	@5,15 get money PICTURE "@9"
+			 	read
+			 	bals = VAL(money)
+			 	remainbal = pera + bals
+			 	@7,5 say "Your balance: "
+			 	@7,19 say remainbal
+					
+					tid=0
+				use t_logs.dbf
+				go bottom
+				tid = transno
+				append blank
+				tid = tid +1
+				replace depo_id with num
+				replace acctype with checker
+				replace date with date()
+				replace time with time()
+				replace balance with remainbal
+				replace transtype with "DEP"
+				replace transamnt with bals
+				replace transno with tid
+				
+			CASE mchoice = 'INQUIRY'
+				@5,5 say "Your current savings: "
+				remainbal = pera - 0
+				
+				tid=0
+				use t_logs.dbf
+				tid = transno
+				append blank
+				
+				tid = tid +1
+				
+				replace depo_id with num
+				replace acctype with checker
+				replace date with date()
+				replace time with time()
+				replace balance with remainbal
+				replace transtype with "INQ"
+				replace transamnt with 0
+				replace transno with tid
+				
+				
+			
+ENDIF

@@ -1,0 +1,25 @@
+
+
+
+@1,1 say "**WELCOME**"
+
+@2,2 GET mchoice FUNCTION '*RNV WITHDRAW;DEPOSIT;INQUIRY';
+	 SIZE 1, 5, 1 DEFAULT ''
+	
+@9,2 GET okcancel FUNCTION '*V \!OK;\?EXIT' DEFAULT 1;
+	 SIZE 1, 10, 1
+READ CYCLE
+
+IF okcancel = 2
+		WAIT WINDOW 'PROGRAM CLOSED' NOWAIT
+ENDIF
+
+	DO CASE
+			CASE mchoice = 'WITHDRAW'
+				do withdraw.prg
+			CASE mchoice = 'DEPOSIT'
+				do deposit.prg
+			CASE mchoice = 'INQUIRY'
+				do inquiry.prg
+			ENDCASE
+			
